@@ -1,12 +1,155 @@
 # KAConvNet
 
-This repository contains the source code for KAConvNet experiments. Data files, training outputs, checkpoints, logs, and other large runtime artifacts are intentionally excluded from this code-only copy.
+<p align="center">
+  <strong>Kolmogorov–Arnold Convolutional Networks for Vision Recognition</strong>
+</p>
 
-## Paper
+<p align="center">
+  <a href="https://doi.org/10.1016/j.imavis.2026.105983"><img alt="Paper" src="https://img.shields.io/badge/Paper-Image%20and%20Vision%20Computing-1f77b4"></a>
+  <a href="https://doi.org/10.1016/j.imavis.2026.105983"><img alt="DOI" src="https://img.shields.io/badge/DOI-10.1016%2Fj.imavis.2026.105983-4c78a8"></a>
+  <img alt="PyTorch" src="https://img.shields.io/badge/Framework-PyTorch-ee4c2c">
+  <img alt="Code only" src="https://img.shields.io/badge/Release-code--only-lightgrey">
+</p>
 
-KAConvNet: Kolmogorov–Arnold convolutional networks for vision recognition.
+This repository contains the code-only release for **KAConvNet**, a vision backbone built around a Kolmogorov–Arnold convolution layer. Runtime artifacts such as datasets, checkpoints, TensorBoard logs, and training outputs are intentionally excluded from this repository.
 
-If you use this code, please cite:
+## Overview
+
+KAConvNet explores how the Kolmogorov–Arnold representation theorem can be integrated into convolutional networks for visual recognition. The paper proposes a **KAConvLayer** that applies learnable nonlinear mappings within channels and mixes information across channels, then builds a compact four-stage ConvNet-style backbone on top of it.
+
+The implementation in this repository includes:
+
+- `KAConvolution` and `KAConvolutionLayer` for Kolmogorov–Arnold convolution.
+- `KAConvBlock` and `KAConvNetBlock` with residual structure and squeeze-and-excitation.
+- `KAConvNet`, a four-stage image classification backbone.
+- ImageNet training utilities adapted from modern ConvNet training recipes.
+
+<p align="center">
+  <img src="assets/kaconvnet-architecture.png" alt="KAConvNet architecture" width="760">
+</p>
+
+## Paper Highlights
+
+- **Kolmogorov–Arnold convolution.** KAConvLayer connects the theorem-inspired inner and outer functions to spatial aggregation and channel mixing in convolutional feature maps.
+- **GLinear learnable activation.** The paper replaces heavier B-spline activations with a piecewise linear learnable function to reduce overfitting risk and improve efficiency.
+- **Compact backbone design.** KAConvNet keeps a familiar stem, stages, transitions, residual blocks, and channel attention layout, making it easy to compare with CNN and ViT-style backbones.
+- **General vision evaluation.** The paper reports results on ImageNet-1K classification, MS COCO object detection, and Cityscapes semantic segmentation.
+
+<p align="center">
+  <img src="assets/kaconv-layer.png" alt="KAConvLayer design" width="760">
+</p>
+
+## Paper Results
+
+### ImageNet-1K Classification
+
+<p align="center">
+  <img src="assets/imagenet-comparison.png" alt="ImageNet-1K comparison" width="700">
+</p>
+
+| Model | Params | FLOPs | Top-1 Acc |
+| --- | ---: | ---: | ---: |
+| KAConvNet-S | 5.0M | 0.7G | 73.7 |
+| KAConvNet-B | 8.6M | 1.4G | 76.8 |
+| KAConvNet-L | 17.5M | 2.9G | 80.1 |
+
+### MS COCO Object Detection
+
+The paper evaluates KAConvNet as the backbone of RTMDet-tiny with 640 x 640 input resolution.
+
+| Backbone | mAP | mAP50 | mAP75 |
+| --- | ---: | ---: | ---: |
+| KAConvNet-S | 43.3 | 60.6 | 47.1 |
+| KAConvNet-B | 45.8 | 63.1 | 49.6 |
+| KAConvNet-L | 48.0 | 65.7 | 51.9 |
+
+### Cityscapes Semantic Segmentation
+
+The paper evaluates KAConvNet as the backbone of PSPNet.
+
+| Backbone | Mean IoU | Mean Pixel Acc |
+| --- | ---: | ---: |
+| KAConvNet-S | 65.32 | 76.06 |
+| KAConvNet-B | 69.20 | 78.70 |
+| KAConvNet-L | 70.58 | 79.51 |
+
+## Repository Layout
+
+| Path | Description |
+| --- | --- |
+| `KAConvNet.py` | Main KAConvNet, KAConvLayer, and KAConv blocks. |
+| `KAConvNet_v2.py` | Alternate KAConvNet implementation kept from the handover. |
+| `ConvNet.py` | Standard ConvNet baseline with matching architecture style. |
+| `train.py` | ImageNet training and evaluation entry point. |
+| `datasets.py` | Dataset construction utilities. |
+| `engine.py` | Training and evaluation loops. |
+| `optim_factory.py` | Optimizer and layer decay helpers. |
+| `utils.py` | Distributed training, logging, checkpoint, and metric utilities. |
+| `command.txt` | Historical training commands from the original work directory. |
+| `assets/` | Cropped paper figures used by this README. |
+
+## Installation
+
+This handover did not include a pinned environment file. The code imports the following main dependencies:
+
+```bash
+pip install torch torchvision timm tensorboardX pillow numpy einops
+```
+
+For strict reproduction, recover exact Python, CUDA, PyTorch, torchvision, and `timm` versions from the original server environment.
+
+## Data
+
+This repository does not include ImageNet, COCO, Cityscapes, checkpoints, or training results. The historical training commands expect ImageNet-style data under:
+
+```text
+datasets/ImageNet1K
+```
+
+Keep datasets and generated outputs out of git. The `.gitignore` excludes common dataset payloads, checkpoints, logs, and `trainresults/`.
+
+## Quick Start
+
+Instantiate the classifier:
+
+```python
+from KAConvNet import KAConvNet
+
+model = KAConvNet(
+    in_channels=3,
+    class_nums=1000,
+    channels=[32, 64, 128, 256],
+    block_nums=[1, 1, 3, 1],
+    drop_path=0.1,
+)
+```
+
+Launch ImageNet training with the historical recipe:
+
+```bash
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 \
+python -m torch.distributed.launch --nproc_per_node=8 --use-env train.py \
+  --batch_size 256 \
+  --lr 2e-3 \
+  --model_ema true \
+  --model_ema_eval true \
+  --data_path datasets/ImageNet1K \
+  --warmup_epochs 5 \
+  --epochs 300 \
+  --output_dir trainresults/kaconvnet-B-5-01
+```
+
+More commands are preserved in `command.txt`.
+
+## Notes
+
+- The current code is a handover snapshot and may need environment/version alignment before exact reproduction.
+- `torch.distributed.launch` is kept in the historical commands for reproducibility. Newer PyTorch setups may prefer `torchrun`.
+- The paper notes that KAConvLayer improves fitting ability over standard convolution, while still carrying extra runtime overhead from learnable activations.
+
+## Citation
+
+If this code or paper is useful for your work, please cite:
 
 ```bibtex
 @article{Liu_2026_KAConvNet,
@@ -20,47 +163,3 @@ If you use this code, please cite:
   url = {https://doi.org/10.1016/j.imavis.2026.105983}
 }
 ```
-
-## Code Layout
-
-- `train.py`: ImageNet training entry point.
-- `KAConvNet.py`: Main KAConvNet model implementation.
-- `KAConvNet_v2.py`: Alternate KAConvNet implementation.
-- `ConvNet.py`: Baseline ConvNet implementation.
-- `datasets.py`: Dataset construction utilities.
-- `engine.py`: Train and evaluation loops.
-- `optim_factory.py`: Optimizer and layer decay helpers.
-- `utils.py`: Distributed training, logging, checkpoint, and metric utilities.
-- `command.txt`: Historical training commands from the handover.
-
-## Dependencies
-
-The code imports these main Python packages:
-
-- `torch`
-- `torchvision`
-- `timm`
-- `tensorboardX`
-- `Pillow`
-- `numpy`
-- `einops`
-
-Exact package versions were not included in the handover and should be recovered from the original server environment when strict reproduction is required.
-
-## Data And Outputs
-
-This code-only copy does not include ImageNet data or training results. Training commands expect ImageNet-style data under:
-
-```text
-datasets/ImageNet1K
-```
-
-Training outputs are written to `trainresults/` by the historical commands. Keep datasets, checkpoints, logs, and generated training outputs out of git.
-
-## Example Training Command
-
-```bash
-CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python -m torch.distributed.launch --nproc_per_node=8 --use-env train.py --batch_size 256 --lr 2e-3 --model_ema true --model_ema_eval true --data_path datasets/ImageNet1K --warmup_epochs 5 --epochs 300 --output_dir trainresults/kaconvnet-B-5-01
-```
-
-More historical commands are kept in `command.txt`.
