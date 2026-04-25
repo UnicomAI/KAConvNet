@@ -8,10 +8,9 @@
   <a href="https://doi.org/10.1016/j.imavis.2026.105983"><img alt="Paper" src="https://img.shields.io/badge/Paper-Image%20and%20Vision%20Computing-1f77b4"></a>
   <a href="https://doi.org/10.1016/j.imavis.2026.105983"><img alt="DOI" src="https://img.shields.io/badge/DOI-10.1016%2Fj.imavis.2026.105983-4c78a8"></a>
   <img alt="PyTorch" src="https://img.shields.io/badge/Framework-PyTorch-ee4c2c">
-  <img alt="Code only" src="https://img.shields.io/badge/Release-code--only-lightgrey">
 </p>
 
-This repository contains the code-only release for **KAConvNet**, a vision backbone built around a Kolmogorov–Arnold convolution layer. Runtime artifacts such as datasets, checkpoints, TensorBoard logs, and training outputs are intentionally excluded from this repository.
+This repository contains the official PyTorch implementation of **KAConvNet**, a vision backbone built around a Kolmogorov–Arnold convolution layer.
 
 ## Overview
 
@@ -78,35 +77,31 @@ The paper evaluates KAConvNet as the backbone of PSPNet.
 | Path | Description |
 | --- | --- |
 | `KAConvNet.py` | Main KAConvNet, KAConvLayer, and KAConv blocks. |
-| `KAConvNet_v2.py` | Alternate KAConvNet implementation kept from the handover. |
+| `KAConvNet_v2.py` | Alternate KAConvNet implementation. |
 | `ConvNet.py` | Standard ConvNet baseline with matching architecture style. |
 | `train.py` | ImageNet training and evaluation entry point. |
 | `datasets.py` | Dataset construction utilities. |
 | `engine.py` | Training and evaluation loops. |
 | `optim_factory.py` | Optimizer and layer decay helpers. |
 | `utils.py` | Distributed training, logging, checkpoint, and metric utilities. |
-| `command.txt` | Historical training commands from the original work directory. |
+| `command.txt` | Example training commands. |
 | `assets/` | Cropped paper figures used by this README. |
 
 ## Installation
 
-This handover did not include a pinned environment file. The code imports the following main dependencies:
+The code uses the following main dependencies:
 
 ```bash
 pip install torch torchvision timm tensorboardX pillow numpy einops
 ```
 
-For strict reproduction, recover exact Python, CUDA, PyTorch, torchvision, and `timm` versions from the original server environment.
-
 ## Data
 
-This repository does not include ImageNet, COCO, Cityscapes, checkpoints, or training results. The historical training commands expect ImageNet-style data under:
+Prepare ImageNet-1K in the standard `torchvision.datasets.ImageFolder` layout. The example training commands expect the dataset under:
 
 ```text
 datasets/ImageNet1K
 ```
-
-Keep datasets and generated outputs out of git. The `.gitignore` excludes common dataset payloads, checkpoints, logs, and `trainresults/`.
 
 ## Quick Start
 
@@ -124,7 +119,7 @@ model = KAConvNet(
 )
 ```
 
-Launch ImageNet training with the historical recipe:
+Launch ImageNet training:
 
 ```bash
 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 \
@@ -139,12 +134,11 @@ python -m torch.distributed.launch --nproc_per_node=8 --use-env train.py \
   --output_dir trainresults/kaconvnet-B-5-01
 ```
 
-More commands are preserved in `command.txt`.
+More commands are available in `command.txt`.
 
 ## Notes
 
-- The current code is a handover snapshot and may need environment/version alignment before exact reproduction.
-- `torch.distributed.launch` is kept in the historical commands for reproducibility. Newer PyTorch setups may prefer `torchrun`.
+- `torch.distributed.launch` is used in the example commands. Newer PyTorch setups may prefer `torchrun`.
 - The paper notes that KAConvLayer improves fitting ability over standard convolution, while still carrying extra runtime overhead from learnable activations.
 
 ## Citation
