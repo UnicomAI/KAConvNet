@@ -1,0 +1,32 @@
+__pycache__/
+*.py[cod]
+*.so
+.DS_Store
+.ipynb_checkpoints/
+
+# Local environments
+.venv/
+venv/
+env/
+*.egg-info/
+
+# Training data and outputs
+datasets/ImageNet1K/train/
+datasets/ImageNet1K/val/
+datasets/ImageNet1K/*.tar
+datasets/ImageNet1K/*.zip
+trainresults/
+runs/
+logs/
+wandb/
+
+# Model artifacts
+*.pth
+*.pt
+*.ckpt
+*.safetensors
+
+# Editor and local files
+.vscode/
+.idea/
+*.log

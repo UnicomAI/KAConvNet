@@ -1,0 +1,10 @@
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python -m torch.distributed.launch --nproc_per_node=8 --use-env train.py --batch_size 256 --lr 2e-3 --model_ema true --model_ema_eval true --data_path datasets/ImageNet1K --warmup_epochs 5 --epochs 300 --output_dir trainresults/kaconvnet-B-5-01
+
+
+CUDA_VISIBLE_DEVICES=0,1,2,6 python -m torch.distributed.launch --nproc_per_node=4 --use-env train.py --batch_size 16 --lr 2e-3 --model_ema true --model_ema_eval true --data_path datasets/ImageNet1K --warmup_epochs 10 --epochs 300 --output_dir trainresults/test01
+
+
+CUDA_VISIBLE_DEVICES=1 python train.py --batch_size 512 --lr 4e-3 --model_ema true --model_ema_eval true --data_path datasets/ImageNet1K --warmup_epochs 10 --epochs 300 --output_dir trainresults/test01
+
+CUDA_VISIBLE_DEVICES=4,5,6,7 python -m torch.distributed.launch --nproc_per_node=4 --use-env train.py --batch_size 256 --lr 2e-3 --model_ema true --model_ema_eval true --data_path datasets/ImageNet1K --warmup_epochs 5 --epochs 300 --output_dir trainresults/KAConvNet-B-01
+
